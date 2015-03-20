@@ -14,33 +14,40 @@ int main(int argc, char **argv) {
     int delword_length = str_len(delword);
 
     int tot_read = 0;
-    char buf[1024];
+    char buf[2048];
     char for_write[1024];
     int for_write_it = 0;
     int it = 0;
     while ((tot_read = read_(STDIN_FILENO, buf, 1024)) > 0) {
         int k;
-        for (k = 0; k < tot_read; k++) {
-            if (buf[k] != delword[it] || delword_length == 0) {
-                int i;
-                if (delword_length != 0) {
-                    // write_(STDOUT_FILENO, delword, it);
-                    int z;
-                    for (z = 0; z < it; z++) {
-                        for_write_it = put_to(delword[z], for_write, for_write_it);
+
+        int was_extra_read = 0;
+
+        do {
+            for (k = 0; k < tot_read;) {
+
+                int j = 0;
+
+                for (; delword[j] == buf[k + j] && j < delword_length; j++) {
+                    if (k + j == tot_read - 1 && was_extra_read == 0) {
+                        was_extra_read = read_(STDIN_FILENO, buf + tot_read, 1024);
                     }
                 }
-                // write_(STDOUT_FILENO, buf + k, 1);
-                for_write_it = put_to(buf[k], for_write, for_write_it);
-                it = 0;
 
-            } else {
-                it++;
-                if (it == delword_length) {
-                    it = 0;
+                if (delword_length != j) {
+                    for_write_it = put_to(buf[k], for_write, for_write_it);
+                    k++;
+                } else {
+                    k += j;
                 }
             }
-        }
+
+            int j;
+            for (j = 0; j < was_extra_read; j++) {
+                buf[j] = buf[tot_read + j];
+            }
+            tot_read = was_extra_read;
+        } while (was_extra_read > 0);
     }
     write_(STDOUT_FILENO, for_write, for_write_it);
     exit(0);
