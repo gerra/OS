@@ -30,3 +30,10 @@ ssize_t read_until(int fd, void * buf, size_t count, char delimiter) {
     }
     return total_read;
 }
+
+int str_len(char *s) {
+    int len = 0;
+    for (; s[len++] != '\0';);
+    len--;
+    return len;
+}
