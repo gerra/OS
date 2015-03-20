@@ -1,12 +1,12 @@
-all: cat revwords helpers
+SUBDIRS = lib cat revwords
 
-helpers: ./lib/helpers.c
-	gcc -fPIC -c -w ./lib/helpers.c
-	gcc -shared -o ./lib/libhelpers.so ./lib/helpers.o
-cat: ./cat/cat.c ./lib/helpers.c
-	gcc -o ./cat/cat -w ./cat/cat.c ./lib/helpers.c -I.
-revwords: ./revwords/revwords.c ./lib/helpers.c helpers
-	gcc -o ./revwords/revwords -w ./revwords/revwords.c ./lib/helpers.c -I.
+all: $(SUBDIRS)
+$(SUBDIRS):
+	$(MAKE) -C $@
+
+.PHONY: all $(SUBDIRS)
+
 clean:
-	rm ./cat/cat ./lib/libhelpers.so ./revwords/revwords
-	rm ./cat/*.o ./lib/*.o ./revwords/*.o
+	for dir in $(SUBDIRS); do \
+		$(MAKE) -C $$dir clean; \
+	done
