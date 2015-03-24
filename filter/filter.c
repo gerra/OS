@@ -13,6 +13,8 @@ int main(int argc, char **argv) {
         args[argc - 1] = buf;
         args[argc] = NULL;
         if (spawn(argv[1], args) == 0) {
+            buf[tot_read - 1] = '\n';
+            buf[tot_read] = '\0';
             write_(STDOUT_FILENO, buf, tot_read);
         }
     }

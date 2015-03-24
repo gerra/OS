@@ -33,18 +33,18 @@ ssize_t read_until(int fd, void * buf, size_t count, char delimiter) {
 }
 
 int spawn(const char * file, char * const argv []) {
-    pid_t pid;
+    pid_t child_pid;
     int res;
-    switch(pid = fork()) {
+    switch(child_pid = fork()) {
     case -1:
         exit(1);
     case 0:
         res = execvp(file, argv);
         exit(res);
     default:
-        wait();
-        return res;
+       wait(&res);
     }
+    return res;
 }
 
 int str_len(char *s) {
