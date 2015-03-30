@@ -1,4 +1,4 @@
-SUBDIRS = lib cat revwords filter
+SUBDIRS = lib cat revwords filter bufcat
 
 all: $(SUBDIRS)
 $(SUBDIRS):
