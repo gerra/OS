@@ -1,6 +1,7 @@
 #include "../lib/bufio.h"
+#include <limits.h>
 
-const int MAX_SIZE = 1 * 1024 * 1024; // 1MB
+const size_t MAX_SIZE = 1024*1024*1024; // 1 GB
 
 int main() {
     struct buf_t *file = buf_new(MAX_SIZE);

@@ -48,8 +48,8 @@ ssize_t buf_fill(int fd, struct buf_t *buf, size_t required) {
         return -1;
     }
     #endif // DEBUG
-    int total_read = 0;
-    int now_read;
+    size_t total_read = 0;
+    size_t now_read;
     char *tmp = malloc(buf->capacity);
     int eof = 0;
     while (1) {
@@ -71,7 +71,7 @@ ssize_t buf_fill(int fd, struct buf_t *buf, size_t required) {
         }
     }
     // save old data:
-    int i;
+    size_t i;
     for (i = 0; i < buf->fill_size; i++) {
         tmp[i] = buf->data[i];
     }
@@ -100,10 +100,10 @@ ssize_t buf_flush(int fd, struct buf_t *buf, size_t required) {
         return -1;
     }
     #endif // DEBUG
-    int total_written = 0;
-    int now_written;
+    size_t total_written = 0;
+    size_t now_written;
     while (1) {
-        int try_to_write = buf->capacity - total_written;
+        size_t try_to_write = buf->capacity - total_written;
         if (try_to_write > buf->fill_size) {
             try_to_write = buf->fill_size;
         }
@@ -124,7 +124,7 @@ ssize_t buf_flush(int fd, struct buf_t *buf, size_t required) {
     }
     buf->fill_size -= total_written;
     char *tmp = malloc(buf->fill_size);
-    int i;
+    size_t i;
     for (i = 0; i < buf->fill_size; i++) {
         tmp[i] = buf->data[i + total_written];
     }
