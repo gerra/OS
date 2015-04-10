@@ -2,7 +2,7 @@
 #include "../lib/helpers.h"
 #include <stdio.h>
 
-const size_t MAX_SIZE = 1*1024*1024; // 1 GB
+const size_t MAX_SIZE = 1024 * 1024; // 1 MB
 
 int main(int argc, char **argv) {
     struct buf_t *file = buf_new(MAX_SIZE);
@@ -10,10 +10,8 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-   // char strings[100][4097];
     char buf[4097];
 
-    int it = 0;
     int str_size = 0;
     char *args[argc + 1];
 
@@ -29,7 +27,6 @@ int main(int argc, char **argv) {
                 buf[str_size] = '\n';
                 write_(STDOUT_FILENO, buf, str_size+1);
             }
-            it++;
         }
     }
     if (str_size < 0) {
