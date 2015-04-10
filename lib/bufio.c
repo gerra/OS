@@ -136,3 +136,57 @@ ssize_t buf_flush(int fd, struct buf_t *buf, size_t required) {
     free(tmp);
     return total_written;
 }
+
+void erase_first_n(struct buf_t *buf, size_t n) {
+    if (n <= 0) {
+        return;
+    }
+    if (n > buf->fill_size) {
+        n = buf->fill_size;
+    }
+    char *tmp = malloc(buf->fill_size - n);
+    size_t i;
+    for (i = n; i < buf->fill_size; i++) {
+        tmp[i-n] = buf->data[i];
+    }
+    free(buf->data);
+    buf->fill_size -= n;
+    buf->data = malloc(buf->fill_size+1);
+    for (i = 0; i < buf->fill_size; i++) {
+        buf->data[i] = tmp[i];
+    }
+    free(tmp);
+}
+
+ssize_t buf_getline(int fd, struct buf_t *buf, char *dest) {
+    size_t i;
+    for (i = 0; i < buf->fill_size; i++) {
+        char cur = *(buf->data + i);
+        if (cur == '\n') {
+            dest = '\0';
+            erase_first_n(buf, i+1);
+            return i;
+        }
+        *dest = cur;
+        dest++;
+    }
+    size_t old_size = buf->fill_size;
+    if (buf_fill(fd, buf, 4096) == -1) {
+        return -1;
+    }
+    for (i = old_size; i < buf->fill_size; i++) {
+        char cur = *(buf->data + i);
+        if (cur == '\n') {
+            dest = '\0';
+            erase_first_n(buf, i+1);
+            return i;
+        }
+        *dest = cur;
+        dest++;
+    }
+}
+
+void buf_clear(struct buf_t *buf) {
+    free(buf->data);
+    buf->fill_size = 0;
+}
