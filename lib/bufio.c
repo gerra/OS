@@ -161,28 +161,26 @@ void erase_first_n(struct buf_t *buf, size_t n) {
 ssize_t buf_getline(int fd, struct buf_t *buf, char *dest) {
     size_t i;
     for (i = 0; i < buf->fill_size; i++) {
-        char cur = *(buf->data + i);
+        char cur = buf->data[i];
         if (cur == '\n') {
-            dest = '\0';
             erase_first_n(buf, i+1);
+            dest[i] = '\0';
             return i;
         }
-        *dest = cur;
-        dest++;
+        dest[i] = cur;
     }
     size_t old_size = buf->fill_size;
     if (buf_fill(fd, buf, 4096) == -1) {
         return -1;
     }
     for (i = old_size; i < buf->fill_size; i++) {
-        char cur = *(buf->data + i);
+        char cur = buf->data[i];
         if (cur == '\n') {
-            dest = '\0';
             erase_first_n(buf, i+1);
+            dest[i] = '\0';
             return i;
         }
-        *dest = cur;
-        dest++;
+        dest[i] = cur;
     }
 }
 
