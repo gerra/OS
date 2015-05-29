@@ -1,4 +1,4 @@
-SUBDIRS = lib cat revwords filter bufcat delwords foreach
+SUBDIRS = lib cat revwords filter bufcat delwords foreach simplesh
 
 all: $(SUBDIRS)
 $(SUBDIRS):

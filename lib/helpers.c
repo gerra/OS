@@ -53,3 +53,70 @@ int str_len(char *s) {
     len--;
     return len;
 }
+
+struct execargs_t *build_execargs(int argc, char **argv) {
+    struct execargs_t *args = malloc(sizeof(struct execargs_t));
+    args->argc = argc;
+    args->argv = malloc(sizeof(char*) * (argc+3));
+    int i;
+    for (i = 0; i < argc; i++) {
+        args->argv[i] = argv[i];
+    }
+    return args;
+}
+
+int exec(struct execargs_t *args) {
+    return spawn(args->argv[0], args->argv);
+}
+
+void close_all_fd(int *fd, int cnt) {
+    int i;
+    for (i = 0; i < cnt; i++) {
+        close(fd[i]);
+    }
+}
+
+int runpiped(struct execargs_t** programs, size_t n) {
+    int pipes[(n - 1) * 2];
+    int i;
+    for (i = 0; i < n - 1; i++) {
+        pipe(pipes + i * 2);
+    }
+    pid_t pid = fork();
+    if (pid < 0) {
+        close_all_fd(pipes, (n - 1) * 2);
+        exit(2);
+    }
+    if (pid == 0) {
+        /* Child process */
+        if (n != 1) {
+            dup2(pipes[1], STDOUT_FILENO);
+        }
+        close_all_fd(pipes, (n - 1) * 2);
+        exec(programs[0]);
+    } else {
+        for (i = 0; i < n-1; i++) {
+            pid = fork();
+            if (pid < 0) {
+                close_all_fd(pipes, (n - 1) * 2);
+                exit(2);
+            }
+            if (pid == 0) {
+                /* New child process */
+                dup2(pipes[i * 2], STDIN_FILENO);
+                if (i + 1 != n-1) {
+                    dup2(pipes[i * 2 + 3], STDOUT_FILENO);
+                }
+
+                close_all_fd(pipes, (n - 1) * 2);
+                exec(programs[i + 1]);
+            }
+        }
+    }
+    close_all_fd(pipes, (n - 1) * 2);
+    int res;
+    for (i = 0; i < n; i++) {
+        wait(&res);
+    }
+    return res;
+}
