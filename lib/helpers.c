@@ -66,13 +66,25 @@ struct execargs_t *build_execargs(int argc, char **argv) {
 }
 
 int exec(struct execargs_t *args) {
-    return spawn(args->argv[0], args->argv);
+    int status = spawn(args->argv[0], args->argv);
+    if (WIFEXITED(status)) {
+        return WEXITSTATUS(status);
+    }
+    return -1;
 }
 
 void close_all_fd(int *fd, int cnt) {
     int i;
     for (i = 0; i < cnt; i++) {
         close(fd[i]);
+    }
+}
+
+int nn;
+int *ppipes;
+void signal_handler_pipe(int signo) {
+    if (signo == SIGINT) {
+        close_all_fd(ppipes, (nn - 1) * 2);
     }
 }
 
@@ -87,13 +99,18 @@ int runpiped(struct execargs_t** programs, size_t n) {
         close_all_fd(pipes, (n - 1) * 2);
         exit(2);
     }
+    nn = n;
+    ppipes = pipes;
+    signal(SIGINT, signal_handler_pipe);
+    int res;
     if (pid == 0) {
         /* Child process */
         if (n != 1) {
             dup2(pipes[1], STDOUT_FILENO);
         }
         close_all_fd(pipes, (n - 1) * 2);
-        exec(programs[0]);
+        res = exec(programs[0]);
+        exit(res);
     } else {
         for (i = 0; i < n-1; i++) {
             pid = fork();
@@ -109,14 +126,16 @@ int runpiped(struct execargs_t** programs, size_t n) {
                 }
 
                 close_all_fd(pipes, (n - 1) * 2);
-                exec(programs[i + 1]);
+                res = exec(programs[i + 1]);
+                exit(res);
             }
         }
     }
     close_all_fd(pipes, (n - 1) * 2);
-    int res;
     for (i = 0; i < n; i++) {
         wait(&res);
     }
-    return res;
+    while (waitpid(-1, NULL, WNOHANG) > 0);
+    signal(SIGINT, NULL);
+    return WEXITSTATUS(res);
 }

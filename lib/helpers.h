@@ -2,6 +2,7 @@
 #define HELPERS_H
 
 #include <unistd.h>
+#include <sys/wait.h>
 
 struct execargs_t {
     int argc;
