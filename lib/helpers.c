@@ -66,76 +66,100 @@ struct execargs_t *build_execargs(int argc, char **argv) {
 }
 
 int exec(struct execargs_t *args) {
-    int status = spawn(args->argv[0], args->argv);
-    if (WIFEXITED(status)) {
-        return WEXITSTATUS(status);
-    }
-    return -1;
+    signal(SIGINT, SIG_DFL);
+    int res = execvp(args->argv[0], args->argv);
+    return res;
 }
 
-void close_all_fd(int *fd, int cnt) {
+struct sigaction prev;
+int nn;
+int *ppids;
+
+void stop_all() {
+    int i;
+    for (i = 0; i < nn; i++) {
+        kill(ppids[i], SIGTERM);
+        waitpid(ppids[i], NULL, 0);
+    }
+
+}
+
+void signal_handler_pipe(int signo) {
+    stop_all();
+}
+
+#define CHECK(__x)      \
+    if (__x == -1) {    \
+        stop_all();     \
+        return -1;      \
+    }
+
+int close_all_fd(int *fd, int cnt) {
     int i;
     for (i = 0; i < cnt; i++) {
-        close(fd[i]);
+        CHECK(close(fd[i]));
     }
 }
-
-int nn;
-int *ppipes;
-void signal_handler_pipe(int signo) {
-    if (signo == SIGINT) {
-        close_all_fd(ppipes, (nn - 1) * 2);
-    }
-}
+                  \
 
 int runpiped(struct execargs_t** programs, size_t n) {
+    if (n < 0) {
+        return -1;
+    }
+    if (n == 0) {
+        return 0;
+    }
+
+    struct sigaction sa;
+    sa.sa_handler = signal_handler_pipe;
+    sa.sa_flags = 0;
+    sigemptyset(&sa.sa_mask);
+    CHECK(sigaction(SIGINT, &sa, &prev));
+
     int pipes[(n - 1) * 2];
+    int pids[n];
     int i;
     for (i = 0; i < n - 1; i++) {
-        pipe(pipes + i * 2);
+        CHECK(pipe(pipes + i * 2));
     }
+    nn = 0;
     pid_t pid = fork();
-    if (pid < 0) {
-        close_all_fd(pipes, (n - 1) * 2);
-        exit(2);
-    }
-    nn = n;
-    ppipes = pipes;
-    signal(SIGINT, signal_handler_pipe);
+    CHECK(pid);
+
+    ppids = pids;
+    ppids[nn++] = pid;
     int res;
     if (pid == 0) {
         /* Child process */
         if (n != 1) {
-            dup2(pipes[1], STDOUT_FILENO);
+            CHECK(dup2(pipes[1], STDOUT_FILENO));
         }
-        close_all_fd(pipes, (n - 1) * 2);
+        if (close_all_fd(pipes, (n - 1) * 2) == -1) return -1;
         res = exec(programs[0]);
+       // CHECK(res);
         exit(res);
     } else {
         for (i = 0; i < n-1; i++) {
             pid = fork();
-            if (pid < 0) {
-                close_all_fd(pipes, (n - 1) * 2);
-                exit(2);
-            }
+            CHECK(pid);
+            ppids[nn++] = pid;
             if (pid == 0) {
                 /* New child process */
-                dup2(pipes[i * 2], STDIN_FILENO);
+                CHECK(dup2(pipes[i * 2], STDIN_FILENO));
                 if (i + 1 != n-1) {
-                    dup2(pipes[i * 2 + 3], STDOUT_FILENO);
+                    CHECK(dup2(pipes[i * 2 + 3], STDOUT_FILENO));
                 }
-
-                close_all_fd(pipes, (n - 1) * 2);
+                if (close_all_fd(pipes, (n - 1) * 2) == -1) return -1;
                 res = exec(programs[i + 1]);
+               // CHECK(res);
                 exit(res);
             }
         }
     }
-    close_all_fd(pipes, (n - 1) * 2);
+    if (close_all_fd(pipes, (n - 1) * 2) == -1) return -1;
     for (i = 0; i < n; i++) {
-        wait(&res);
+        wait(NULL);
     }
-    while (waitpid(-1, NULL, WNOHANG) > 0);
-    signal(SIGINT, NULL);
-    return WEXITSTATUS(res);
+    while (waitpid(-1, NULL, WNOHANG) > 0); // kill zombies
+    return 0;
 }

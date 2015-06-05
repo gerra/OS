@@ -73,7 +73,7 @@ int main(int argc, int **argv) {
 
         int len;
         char buf[MAX_LEN];
-        while ((len = read_until(STDIN_FILENO, buf, 5, '\n')) > 0) {
+        while ((len = read_until(STDIN_FILENO, buf, MAX_LEN, '\n')) > 0) {
             if (len != MAX_LEN) {
                 buf[len] = 0;
             }
@@ -87,8 +87,10 @@ int main(int argc, int **argv) {
                     }
                     pipeArgs[pipeArgCnt] = malloc(sizeof(char) * offset);
                     memcpy(pipeArgs[pipeArgCnt], curArg, offset * sizeof(char));
+                    if (offset != 0) {
+                        pipeArgCnt++;
+                    }
                     offset = 0;
-                    pipeArgCnt++;
 
                     if (buf[i] == '\n') {
                         endOfComand = 1;
@@ -120,7 +122,6 @@ int main(int argc, int **argv) {
 
       //  printf("%s\n", programs[0]->argv[0]);
       //  printf("%s\n", programs[1]->argv[0]);
-
         int res = runpiped(programs, pipeArgCnt);
 
         //printf("hhh\n");
