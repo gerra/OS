@@ -67,8 +67,8 @@ struct execargs_t *build_execargs(int argc, char **argv) {
 
 int exec(struct execargs_t *args) {
     signal(SIGINT, SIG_DFL);
-    int res = execvp(args->argv[0], args->argv);
-    return res;
+    execvp(args->argv[0], args->argv);
+    return -1;
 }
 
 struct sigaction prev;
@@ -81,7 +81,6 @@ void stop_all() {
         kill(ppids[i], SIGTERM);
         waitpid(ppids[i], NULL, 0);
     }
-
 }
 
 void signal_handler_pipe(int signo) {
@@ -100,7 +99,7 @@ int close_all_fd(int *fd, int cnt) {
         CHECK(close(fd[i]));
     }
 }
-                  \
+
 
 int runpiped(struct execargs_t** programs, size_t n) {
     if (n < 0) {
@@ -136,8 +135,7 @@ int runpiped(struct execargs_t** programs, size_t n) {
         }
         if (close_all_fd(pipes, (n - 1) * 2) == -1) return -1;
         res = exec(programs[0]);
-       // CHECK(res);
-        exit(res);
+        return -1;
     } else {
         for (i = 0; i < n-1; i++) {
             pid = fork();
@@ -151,8 +149,7 @@ int runpiped(struct execargs_t** programs, size_t n) {
                 }
                 if (close_all_fd(pipes, (n - 1) * 2) == -1) return -1;
                 res = exec(programs[i + 1]);
-               // CHECK(res);
-                exit(res);
+                return -1;
             }
         }
     }
