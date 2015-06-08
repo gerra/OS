@@ -64,8 +64,8 @@ int main(int argc, char **argv) {
         exit(1);
     }
 
-    int sock1 = createServerSocket("127.0.0.1", argv[1]);
-    int sock2 = createServerSocket("127.0.0.1", argv[2]);
+    int sock1 = createServerSocket("0.0.0.0", argv[1]);
+    int sock2 = createServerSocket("0.0.0.0", argv[2]);
 
     printf("server1: %d\n", sock1);
     printf("server2: %d\n", sock2);

@@ -23,19 +23,23 @@ int createBoundSocket(char *address, char *port) {
     for (rv = addresses; rv != NULL; rv = rv->ai_next) {
         resultSocket = socket(AF_INET, SOCK_STREAM, 0);
         if (resultSocket == -1) {
+            printf("socket error\n");
             continue;
         }
         int one = 1;
         if (setsockopt(resultSocket, SOL_SOCKET, SO_REUSEADDR, &one, sizeof(int)) == -1) {
+            printf("stsockopt error\n");
             close(resultSocket);
             continue;
         }
         if (bind(resultSocket, rv->ai_addr, rv->ai_addrlen) == 0) {
             break;
         }
+
         close(resultSocket);
     }
     if (rv == NULL) {
+        printf("rv = NULL\n");
         resultSocket = -1;
     }
     freeaddrinfo(addresses);
@@ -47,7 +51,7 @@ int main(int argc, char **argv) {
         printf("USAGE: ./filesender <port> <filename>\n");
         exit(-1);
     }
-    int sock = createBoundSocket("127.0.0.1", argv[1]);
+    int sock = createBoundSocket("0.0.0.0", argv[1]);
     if (sock == -1) {
         printf("Cannot create bound socket\n");
         exit(1);
@@ -57,7 +61,7 @@ int main(int argc, char **argv) {
         perror("listen");
         exit(1);
     }
-
+    printf("%d\n", sock);
     struct sockaddr_in client;
     socklen_t sz = sizeof(client);
     while (1) {
