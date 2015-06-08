@@ -50,7 +50,7 @@ int createServerSocket(char *address, char *port) {
         exit(1);
     }
 
-    if (listen(sock, 1) == -1) {
+    if (listen(sock, 128) == -1) {
         perror("listen");
         exit(1);
     }
@@ -60,8 +60,8 @@ int createServerSocket(char *address, char *port) {
 
 int main(int argc, char **argv) {
     if (argc != 3) {
-        printf("USAGE: ./filesender <port1> <port2>\n");
-        exit(-1);
+        printf("USAGE: ./forking <port1> <port2>\n");
+        exit(1);
     }
 
     int sock1 = createServerSocket("127.0.0.1", argv[1]);

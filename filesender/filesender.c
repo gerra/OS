@@ -75,8 +75,8 @@ int main(int argc, char **argv) {
             int filefd = open(argv[2], O_RDONLY);
             struct buf_t *buf = buf_new(4096);
             int len;
-            while ((len = buf_fill(filefd, buf, 4096)) > 0) {
-                buf_flush(fd, buf, 4096);
+            while ((len = buf_fill(filefd, buf, 1)) > 0) {
+                buf_flush(fd, buf, len);
             }
             buf_free(buf);
             close(filefd);
