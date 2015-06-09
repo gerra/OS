@@ -3,9 +3,9 @@
 #include <stdlib.h>
 
 struct buf_t *buf_new(size_t capacity) {
-    struct buf_t *res = malloc(sizeof(struct buf_t));
+    struct buf_t *res = (struct buf_t *)malloc(sizeof(struct buf_t));
     if (res != NULL) {
-        res->data = malloc(capacity);
+        res->data = (char *)malloc(capacity);
         res->capacity = capacity;
         res->fill_size = 0;
     }
@@ -51,7 +51,7 @@ ssize_t buf_fill(int fd, struct buf_t *buf, size_t required) {
     #endif // DEBUG
     size_t total_read = 0;
     size_t now_read;
-    char *tmp = malloc(buf->capacity);
+    char *tmp = (char *)malloc(buf->capacity);
     int eof = 0;
     while (1) {
         now_read = read(fd, tmp + total_read + buf->fill_size, buf->capacity - buf->fill_size - total_read);
@@ -80,7 +80,7 @@ ssize_t buf_fill(int fd, struct buf_t *buf, size_t required) {
     free(buf->data);
     // update data
     buf->fill_size += total_read;
-    buf->data = malloc(buf->fill_size);
+    buf->data = (char *)malloc(buf->fill_size);
     for (i = 0; i < buf->fill_size; i++) {
         buf->data[i] = tmp[i];
     }
@@ -124,13 +124,13 @@ ssize_t buf_flush(int fd, struct buf_t *buf, size_t required) {
         }
     }
     buf->fill_size -= total_written;
-    char *tmp = malloc(buf->fill_size);
+    char *tmp = (char *)malloc(buf->fill_size);
     size_t i;
     for (i = 0; i < buf->fill_size; i++) {
         tmp[i] = buf->data[i + total_written];
     }
     free(buf->data);
-    buf->data = malloc(buf->fill_size);
+    buf->data = (char *)malloc(buf->fill_size);
     for (i = 0; i < buf->fill_size; i++) {
         buf->data[i] = tmp[i];
     }
@@ -145,14 +145,14 @@ void erase_first_n(struct buf_t *buf, size_t n) {
     if (n > buf->fill_size) {
         n = buf->fill_size;
     }
-    char *tmp = malloc(buf->fill_size - n);
+    char *tmp = (char *)malloc(buf->fill_size - n);
     size_t i;
     for (i = n; i < buf->fill_size; i++) {
         tmp[i-n] = buf->data[i];
     }
     free(buf->data);
     buf->fill_size -= n;
-    buf->data = malloc(buf->fill_size+1);
+    buf->data = (char *)malloc(buf->fill_size+1);
     for (i = 0; i < buf->fill_size; i++) {
         buf->data[i] = tmp[i];
     }
@@ -174,7 +174,7 @@ ssize_t buf_getline(int fd, struct buf_t *buf, char *dest) {
     erase_first_n(buf, i);
     while (1) {
         buf_fill(fd, buf, 1);
-        if (buf->fill_size == 0) return 0;
+        if (buf->fill_size == 0) return i;
         int j = 0;
         for (j = 0; j < buf->fill_size; j++) {
             char cur = buf->data[j];
